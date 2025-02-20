@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+<h1>Quản lí sản phẩm</h1>
+
+<div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-success" th:href="@{/products/new}">Thêm sản phẩm</a>
+    <button class="btn btn-danger ms-2" onclick="deleteAllProducts()">Xóa toàn bộ sản phẩm</button>
+</div>
+<div>
+    <form class="mb-3" action="/search" method="get">
+        <div class="row">
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="name" placeholder="Tên sản phẩm" th:value="${sName}">
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control" name="price" placeholder="Giá bắt đầu" th:value="${sPrice}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-control" name="category">
+                    <option value="">Chọn loại sản phẩm</option>
+                    <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"
+                            th:selected="${sCategory==category.id}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+            </div>
+        </div>
+    </form>
+</div>
+<br>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+        <tr>
+            <th>STT</th>
+            <th>Chọn</th>
+            <th>Tên sản phẩm</th>
+            <th>Giá bắt đầu</th>
+            <th>Loại sản phẩm</th>
+            <th>Tình trạng</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="product, iterStat : ${productList}">
+            <td th:text="${iterStat.index + 1}"></td>
+            <td><input type="checkbox" th:value="${product.id}" th:data-name="${product.name}"></td>
+            <td th:text="${product.name}"></td>
+            <td th:text="${product.price}"></td>
+            <td th:text="${product.category.name}"></td>
+            <th th:text="${product.status}"></th>
+            <td>
+                <a class="btn btn-primary" th:href="@{'/products/' + ${product.id}}">Sửa</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<button class="btn btn-warning ms-2" onclick="deleteSelectedProducts()">Xóa các sản phẩm được chọn</button>
+
+<div class="d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+            <a class="page-link" th:href="@{'/?page=' + ${currentPage - 1}}">Trước</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage} ? 'active'">
+            <a class="page-link" th:href="@{'/?page=' + ${i}}" th:text="${i + 1}"></a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+            <a class="page-link" th:href="@{'/?page=' + ${currentPage + 1}}">Sau</a>
+        </li>
+    </ul>
+</div>
+
+<script>
+    function deleteAllProducts() {
+        if (confirm('Bạn có chắc chắn muốn xóa toàn bộ sản phẩm?')) {
+            fetch('/delete_all', {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    alert('Toàn bộ sản phẩm đã được xóa.');
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra khi xóa toàn bộ sản phẩm.');
+                }
+            });
+        }
+    }
+
+    function deleteSelectedProducts() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        if (checkboxes.length === 0) {
+            alert('Vui lòng chọn ít nhất một sản phẩm để xóa.');
+            return;
+        }
+
+        const productIds = Array.from(checkboxes).map(checkbox => checkbox.value);
+        const productNames = Array.from(checkboxes).map(checkbox => checkbox.getAttribute('data-name'));
+        if (confirm(`Bạn có chắc chắn muốn xóa các sản phẩm sau: ${productNames.join(', ')}?`)) {
+            fetch('/products/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    productIds: productIds
+                })
+            }).then(response => {
+                if (response.ok) {
+                    alert('Sản phẩm đã được xóa.');
+                    location.reload();
+                } else {
+                    alert('Có lỗi xảy ra khi xóa sản phẩm.');
+                }
+            });
+        }
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+</body>
+</html>
